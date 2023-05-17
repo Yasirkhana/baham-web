@@ -1,6 +1,8 @@
+import datetime
 from django.utils.timezone import now
 from django.contrib.auth.models import User
 from django.db import models
+from datetime import timezone
 
 from baham.constants import COLOURS, TOWNS
 from baham.enum_types import VehicleType, VehicleStatus, UserType
@@ -32,6 +34,9 @@ class UserProfile(models.Model):
     date_deactivated = models.DateTimeField(editable=False, null=True)
     bio = models.TextField()
 
+    # Audit Fields
+   
+
     def __str__(self):
         return f"{self.username} {self.first_name} {self.last_name}"
 
@@ -47,6 +52,41 @@ class VehicleModel(models.Model):
                             help_text="Select the vehicle chassis type")
     # Sitting capacity
     capacity = models.PositiveSmallIntegerField(null=False, default=2)
+
+
+    # Audit Fields:
+
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_vehicle_models')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_vehicle_models')
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+    is_voided = models.BooleanField(default=False)
+    voided_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='voided_vehicle_models')
+    date_voided = models.DateTimeField(null=True)
+    void_reason = models.TextField(null=True)
+
+
+    #void unvoid functions:
+
+    def void(self, reason):
+        self.is_voided = True
+        self.date_voided = datetime.now()
+        self.void_reason = reason
+        self.save()
+
+    def unvoid(self):
+        self.is_voided = False
+        self.date_voided = None
+        self.void_reason = None
+        self.save()
+
+
+
+
+
 
     class Meta:
         db_table = "baham_vehicle_model"
@@ -81,3 +121,5 @@ class Contract(models.Model):
     fuel_share = models.PositiveSmallIntegerField(help_text="Percentage of fuel contribution.")
     maintenance_share = models.PositiveSmallIntegerField(help_text="Percentage of maintenance cost contribution.")
     schedule = models.CharField(max_length=255, null=False)  #TODO: use Django Scheduler
+
+
