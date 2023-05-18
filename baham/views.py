@@ -23,18 +23,6 @@ def view_aboutus(request):
     return HttpResponse(template.render(context, request))
 
 
-def vehicle_void(request, model_id):
-    vehicle_model = VehicleModel.objects.get(model_id=model_id)
-    reason = "DELETED BY USER"
-    vehicle_model.void(reason)
-    return HttpResponseRedirect(reverse('vehicles'))
-
-def vehicle_unvoid(request, model_id):
-    vehicle_model = VehicleModel.objects.get(model_id=model_id)
-    vehicle_model.unvoid()
-    return HttpResponseRedirect(reverse('vehicles'))
-
-
 def view_vehicles(request):
     template = loader.get_template('vehicles.html')
     vehicles = VehicleModel.objects.all().order_by('vendor')
@@ -43,8 +31,6 @@ def view_vehicles(request):
         'vehicles': vehicles
     }
     return HttpResponse(template.render(context, request))
-
-
 
 
 def create_vehicle(request):
@@ -68,3 +54,13 @@ def save_vehicle(request):
     vehicleModel = VehicleModel(vendor=_vendor, model=_model, type=_type, capacity=_capacity)
     vehicleModel.save()
     return HttpResponseRedirect(reverse('vehicles'))
+
+def delete_vehicle(request, id):
+    obj = get_object_or_404(Vehicle, pk = id)
+    obj.delete(voided_by=request.user)
+    return HttpResponseRedirect(reverse(view_vehicles))
+
+def undelete_vehicle(request, id):
+    obj = get_object_or_404(Vehicle, pk = id)
+    obj.undelete()
+    return HttpResponseRedirect(reverse(view_vehicles))
